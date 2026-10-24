@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#050811">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>The Royal Arena</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-database-compat.js"></script>
+
+  <style>
+    body { background-color: #050811; color: #ffffff; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
+    .gold-gradient { background: linear-gradient(90deg, #D4AF37 0%, #FFDF73 50%, #D4AF37 100%); }
+    .glass-card { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 12px; backdrop-filter: blur(10px); }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    #toast { transition: opacity 0.3s, transform 0.3s; z-index: 1000; }
+  </style>
+</head>
+<body class="min-h-screen p-4 pb-24">
+
+  <!-- Custom Toast Notification -->
+  <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-[#D4AF37] text-black font-bold px-6 py-3 rounded-full shadow-2xl opacity-0 pointer-events-none text-center min-w-[250px]">
+    संदेश यहाँ दिखेगा
+  </div>
+
+  <!-- Header -->
+  <header class="text-center mb-6 mt-2 fade-in">
+    <div class="inline-block p-4 rounded-full mb-2 shadow-[0_0_15px_rgba(212,175,55,0.3)]" style="background: rgba(212,175,55,0.1);">
+      <span class="text-5xl">👑</span>
+    </div>
+    <h1 class="text-3xl font-extrabold text-transparent bg-clip-text gold-gradient tracking-wide">ROYAL ARENA</h1>
+    <p class="text-gray-400 text-sm mt-1 font-medium">लाइव मल्टीप्लेयर स्क्वाड मैनेजर</p>
+  </header>
+
+  <!-- Add Player Form -->
+  <div class="glass-card p-5 mb-6 fade-in shadow-lg">
+    <h2 class="text-lg font-bold text-[#FFDF73] mb-4 flex items-center gap-2"><span>➕</span> नया खिलाड़ी जोड़ें</h2>
+    <input type="text" id="playerName" placeholder="खिलाड़ी का नाम दर्ज करें..." class="w-full bg-[#0a0f1d] border border-gray-700 rounded-lg p-3 mb-4 text-white focus:outline-none focus:border-[#D4AF37] transition">
+    <select id="playerRole" class="w-full bg-[#0a0f1d] border border-gray-700 rounded-lg p-3 mb-5 text-white focus:outline-none focus:border-[#D4AF37] transition">
+      <option value="बल्लेबाज़ 🏏">बल्लेबाज़ 🏏</option>
+      <option value="गेंदबाज़ ⚾">गेंदबाज़ ⚾</option>
+      <option value="ऑल-राउंडर ⚔️">ऑल-राउंडर ⚔️</option>
+    </select>
+    <button onclick="addPlayer()" class="w-full text-black font-extrabold py-3.5 rounded-lg gold-gradient shadow-[0_4px_15px_rgba(212,175,55,0.4)] active:scale-95 transition-transform text-lg">
+      खिलाड़ी सेव करें
+    </button>
+  </div>
+
+  <!-- Player List -->
+  <div class="glass-card p-5 mb-6 fade-in">
+    <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+      <h2 class="text-lg font-bold text-[#FFDF73]">कुल खिलाड़ी</h2>
+      <span id="playerCount" class="bg-[#D4AF37] text-black px-4 py-1 rounded-full font-extrabold text-sm shadow-md">0</span>
+    </div>
+    <ul id="playerList" class="space-y-3 mb-5 max-h-64 overflow-y-auto pr-1">
+      <!-- Players will load here from Firebase -->
+    </ul>
+    <button onclick="generateTeams()" class="w-full border-2 border-[#D4AF37] text-[#FFDF73] font-bold py-3.5 rounded-lg active:bg-[#D4AF37] active:text-black transition-colors text-lg flex justify-center items-center gap-2">
+      <span>⚔️</span> 2 बराबर टीमें बनाएं
+    </button>
+  </div>
+
+  <!-- Generated Teams -->
+  <div id="teamsContainer" class="hidden fade-in">
+    <div class="flex flex-col gap-4 mb-6">
+      <!-- Team A -->
+      <div class="glass-card p-5 border-l-4 border-l-blue-500 relative overflow-hidden">
+        <div class="absolute top-0 right-0 p-2 opacity-10 text-4xl">🛡️</div>
+        <h3 class="text-xl font-black text-blue-400 mb-3 border-b border-blue-500/30 pb-2">Team A</h3>
+        <ul id="teamA" class="text-white space-y-2 font-medium"></ul>
+      </div>
+      <!-- Team B -->
+      <div class="glass-card p-5 border-l-4 border-l-red-500 relative overflow-hidden">
+        <div class="absolute top-0 right-0 p-2 opacity-10 text-4xl">⚔️</div>
+        <h3 class="text-xl font-black text-red-400 mb-3 border-b border-red-500/30 pb-2">Team B</h3>
+        <ul id="teamB" class="text-white space-y-2 font-medium"></ul>
+      </div>
+    </div>
+    <!-- Share to WhatsApp -->
+    <button onclick="shareToWhatsApp()" class="w-full bg-[#25D366] text-white font-bold py-3.5 rounded-lg shadow-lg active:scale-95 transition-transform text-lg flex justify-center items-center gap-2 mb-8">
+      <span>📲</span> WhatsApp पर टीमें भेजें
+    </button>
+  </div>
+
+  <!-- Clear Button -->
+  <div class="text-center pb-8">
+    <button onclick="clearAll()" class="text-gray-500 underline text-sm font-medium p-2 active:text-red-400">⚠️ सारा डेटा डिलीट करें</button>
+  </div>
+
+  <script>
+    // Your LIVE Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPoYxGcOm65GVDU-nAv4_DsjRjIaRzYUw",
+      authDomain: "royal-arena-e8df5.firebaseapp.com",
+      databaseURL: "https://royal-arena-e8df5-default-rtdb.firebaseio.com",
+      projectId: "royal-arena-e8df5",
+      storageBucket: "royal-arena-e8df5.firebasestorage.app",
+      messagingSenderId: "777894156302",
+      appId: "1:777894156302:web:7dcc9e7c3da74e9271445f",
+      measurementId: "G-FM1N9ELE5C"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let players = [];
+    let lastTeamA = [];
+    let lastTeamB = [];
+
+    // Custom Toast Notification
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.innerText = message;
+      toast.classList.remove('opacity-0', '-translate-y-5');
+      setTimeout(() => toast.classList.add('opacity-0', '-translate-y-5'), 2500);
+      try { navigator.vibrate(50); } catch(e){}
+    }
+
+    // Listen to Firebase Live Changes (Real-time Sync)
+    db.ref('/').on('value', (snapshot) => {
+      const data = snapshot.val() || {};
+      players = data.players || [];
+      lastTeamA = data.teams?.teamA || [];
+      lastTeamB = data.teams?.teamB || [];
+      const isGenerated = data.teams?.isGenerated || false;
+
+      renderPlayers();
+
+      if(isGenerated && lastTeamA.length > 0) {
+        renderTeams(lastTeamA, lastTeamB);
+      } else {
+        document.getElementById('teamsContainer').classList.add('hidden');
+      }
+    });
+
+    // Render Players in List
+    function renderPlayers() {
+      const list = document.getElementById('playerList');
+      list.innerHTML = '';
+      document.getElementById('playerCount').innerText = players.length;
+      
+      if(players.length === 0) {
+        list.innerHTML = '<div class="text-center text-gray-500 py-6 text-sm">अभी कोई खिलाड़ी नहीं है।<br>ऊपर से नया खिलाड़ी जोड़ें।</div>';
+        return;
+      }
+
+      players.forEach((p, index) => {
+        list.innerHTML += `
+          <li class="flex justify-between items-center bg-[#0a0f1d] p-3 rounded-lg border border-gray-700/50 shadow-sm fade-in">
+            <div>
+              <p class="font-bold text-white text-[15px]">${p.name}</p>
+              <p class="text-[11px] text-[#D4AF37] tracking-wider mt-0.5">${p.role}</p>
+            </div>
+            <button onclick="deletePlayer(${index})" class="text-red-400 bg-red-500/10 px-3 py-1.5 rounded-md text-xs font-bold active:bg-red-500/30 transition">हटाएं</button>
+          </li>
+        `;
+      });
+    }
+
+    // Add new player to Firebase
+    function addPlayer() {
+      const nameInput = document.getElementById('playerName');
+      const name = nameInput.value.trim();
+      const role = document.getElementById('playerRole').value;
+      
+      if (!name) return showToast("⚠️ कृपया खिलाड़ी का नाम लिखें!");
+      
+      players.push({ name, role });
+      db.ref('/').update({ players: players, teams: { isGenerated: false } });
+      
+      nameInput.value = '';
+      showToast("✅ खिलाड़ी जुड़ गया!");
+    }
+
+    // Delete player from Firebase
+    function deletePlayer(index) {
+      players.splice(index, 1);
+      db.ref('/').update({ players: players, teams: { isGenerated: false } });
+    }
+
+    // Smart Balanced Teams Generation
+    function generateTeams() {
+      if (players.length < 2) return showToast("⚠️ कम से कम 2 खिलाड़ी चाहिए!");
+
+      let batsmen = players.filter(p => p.role.includes('बल्लेबाज़')).sort(() => 0.5 - Math.random());
+      let bowlers = players.filter(p => p.role.includes('गेंदबाज़')).sort(() => 0.5 - Math.random());
+      let allrounders = players.filter(p => p.role.includes('ऑल-राउंडर')).sort(() => 0.5 - Math.random());
+
+      let tA = [], tB = [];
+
+      const distribute = (group) => {
+        group.forEach(p => {
+          if (tA.length <= tB.length) tA.push(p);
+          else tB.push(p);
+        });
+      };
+
+      distribute(allrounders);
+      distribute(batsmen);
+      distribute(bowlers);
+
+      // Save teams to Firebase so everyone sees the SAME teams
+      db.ref('teams').set({ teamA: tA, teamB: tB, isGenerated: true });
+      showToast("⚔️ टीमें बन गईं!");
+      setTimeout(() => document.getElementById('teamsContainer').scrollIntoView({ behavior: 'smooth' }), 100);
+    }
+
+    // Render Teams HTML
+    function renderTeams(tA, tB) {
+      const renderTeam = (team) => team.map(p => `
+        <li class="flex justify-between items-center py-1 border-b border-gray-700/30 last:border-0">
+          <span>${p.name}</span>
+          <span class="text-[10px] text-gray-400">${p.role.split(' ')[0]}</span>
+        </li>
+      `).join('');
+
+      document.getElementById('teamA').innerHTML = renderTeam(tA);
+      document.getElementById('teamB').innerHTML = renderTeam(tB);
+      document.getElementById('teamsContainer').classList.remove('hidden');
+    }
+
+    // Share to WhatsApp
+    function shareToWhatsApp() {
+      let text = "🏆 *THE ROYAL ARENA - MATCH TEAMS* 🏆\n\n";
+      text += "🛡️ *TEAM A*\n";
+      lastTeamA.forEach(p => text += `• ${p.name} (${p.role.split(' ')[0]})\n`);
+      text += "\n⚔️ *TEAM B*\n";
+      lastTeamB.forEach(p => text += `• ${p.name} (${p.role.split(' ')[0]})\n`);
+      text += "\n📱 _Generated via Royal Arena App_";
+      
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    // Clear All Data
+    function clearAll() {
+      if(confirm("क्या आप सच में सारा डेटा हटाना चाहते हैं?")) {
+        db.ref('/').set({ players: [], teams: { isGenerated: false } });
+        showToast("🗑️ डेटा डिलीट हो गया");
+      }
+    }
+  </script>
+</body>
+</html>
