@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>The Royal Arena: Time to Rule - आधिकारिक टूर्नामेंट ऐप</title>
+
+  <!-- PWA & Mobile Meta Tags -->
+  <meta name="theme-color" content="#050811">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Royal Arena">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23050811'/><path d='M12 32 L26 76 L74 76 L88 32 L64 56 L50 26 L36 56 Z' fill='%23F59E0B'/><circle cx='50' cy='18' r='7' fill='%23FDE68A'/></svg>">
+
+  <!-- Dynamic PWA Manifest Link -->
+  <link id="pwaManifestLink" rel="manifest">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Cinzel & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Firebase CDN (Compat Version) -->
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-storage-compat.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            royal: {
+              gold: '#F59E0B',
+              goldLight: '#FDE68A',
+              goldDark: '#B45309',
+              goldBorder: '#D97706',
+              bgDark: '#050811',
+              cardDark: '#0C1322',
+              surfaceDark: '#141E34',
+              borderDark: '#26344E'
+            }
+          },
+          fontFamily: {
+            cinzel: ['"Cinzel"', 'serif'],
+            inter: ['"Inter"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --sat: env(safe-area-inset-top, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+    }
+    body {
+      background-color: #050811;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(245, 158, 11, 0.14) 0px, transparent 40%),
+        radial-gradient(at 100% 100%, rgba(217, 119, 6, 0.10) 0px, transparent 45%);
+      font-family: 'Inter', sans-serif;
+      color: #F8FAFC;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    input, textarea, select {
+      user-select: text;
+    }
+    .gold-gradient-text {
+      background: linear-gradient(135deg, #FFFBEB 0%, #FBBF24 50%, #D97706 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .gold-btn {
+      background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+      box-shadow: 0 4px 18px rgba(245, 158, 11, 0.32);
+      transition: all 0.2s ease;
+    }
+    .gold-btn:active {
+      transform: scale(0.97);
+    }
+    .gold-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .gold-border-glow {
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.16);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+    @media print {
+      body * { visibility: hidden !important; }
+      #printPassArea, #printPassArea * { visibility: visible !important; }
+      #printPassArea {
+        position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+        width: 100%; max-width: 440px; background: #ffffff !important; color: #000000 !important;
+      }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased pb-28 selection:bg-amber-500 selection:text-black">
+
+  <!-- ================= TOP APP BAR ================= -->
+  <header class="sticky top-0 z-40 bg-[#050811]/95 backdrop-blur-md border-b border-amber-500/20 px-3.5 py-2.5">
+    <div class="max-w-3xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-9 h-9 rounded-2xl bg-amber-500/15 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-md flex-shrink-0">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m2 5 3 11h14l3-11-6 6-4-6-4 6-6-6zm3 15h14v2H5z"/><circle cx="12" cy="4" r="1.5" fill="currentColor"/></svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <h1 class="font-cinzel text-sm sm:text-base font-black gold-gradient-text tracking-wider uppercase leading-none">The Royal Arena</h1>
+            <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">PRO</span>
+          </div>
+          <p class="font-cinzel text-[9px] text-amber-200/80 font-bold tracking-widest uppercase">Time To Rule • टूर्नामेंट ऐप</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button onclick="openInstallGuideModal()" class="px-2.5 py-1.5 rounded-xl bg-royal-cardDark border border-amber-500/30 text-amber-300 flex items-center gap-1 text-[11px] font-bold"><span>📱</span><span>गाइड</span></button>
+      </div>
+    </div>
+  </header>
+
+  <!-- CLOUD STATUS BANNER -->
+  <div class="max-w-3xl mx-auto px-4 pt-2.5 w-full">
+    <div class="bg-gradient-to-r from-blue-950/40 via-royal-cardDark to-royal-cardDark px-3 py-2 rounded-2xl border border-blue-500/30 flex items-center justify-between text-xs">
+      <div class="flex items-center gap-2">
+        <span class="relative flex h-2.5 w-2.5 flex-shrink-0">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
+        </span>
+        <div>
+          <span class="text-[11px] font-bold text-blue-300">डेटा क्लाउड (Firebase) में सुरक्षित है</span>
+          <span class="text-[10px] text-gray-400 block">पासवर्ड सुरक्षा और लाइव सिंक सक्रिय</span>
+        </div>
+      </div>
+      <span class="px-2 py-1 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-bold">🔒 सुरक्षित</span>
+    </div>
+  </div>
+
+  <!-- ================= MAIN CONTENT VIEWPORT ================= -->
+  <main class="flex-1 max-w-3xl w-full mx-auto px-4 py-3 space-y-4">
+
+    <!-- VIEW 1: DASHBOARD -->
+    <section id="viewDashboard" class="space-y-4 tab-view">
+      <div class="bg-gradient-to-br from-[#121c35] via-royal-cardDark to-[#060a14] rounded-3xl p-5 border border-amber-500/30 shadow-xl relative overflow-hidden">
+        <div class="flex items-start justify-between">
+          <div>
+            <span class="inline-block text-[10px] font-bold tracking-widest text-amber-300 uppercase px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-400/30">⚔️ आधिकारिक टूर्नामेंट पोर्टल ⚔️</span>
+            <h2 class="font-cinzel text-xl sm:text-2xl font-black text-white mt-1.5">The Royal Arena <span class="gold-gradient-text">Cricket</span></h2>
+            <p class="text-xs text-gray-300 mt-1">खिलाड़ियों का स्थायी पंजीकरण, डिजिटल पास और टीम डिवाइडर।</p>
+          </div>
+          <span class="text-4xl">👑</span>
+        </div>
+        <div class="mt-4 pt-3.5 border-t border-gray-800 flex flex-wrap items-center justify-between gap-2">
+          <button onclick="switchTab('tabRegister')" class="gold-btn px-4 py-2 rounded-xl text-black font-black text-xs"><span>✍️ नया खिलाड़ी जोड़ें</span></button>
+          <button onclick="shareSquadWhatsApp()" class="px-3.5 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs"><span>💬 व्हाट्सएप शेयर</span></button>
+          <button onclick="switchTab('tabTeams')" class="px-3.5 py-2 rounded-xl bg-royal-surfaceDark border border-amber-500/30 text-amber-300 font-bold text-xs"><span>⚖️ टीम डिवाइडर</span></button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+        <div class="bg-royal-cardDark p-3 rounded-2xl border border-amber-500/40 text-center"><div class="text-[10px] text-amber-300 uppercase font-bold">कुल</div><div id="statTotal" class="text-2xl font-black text-amber-400">0</div></div>
+        <div class="bg-royal-cardDark p-3 rounded-2xl border border-blue-500/30 text-center"><div class="text-[10px] text-blue-300 uppercase font-bold">बल्लेबाज़</div><div id="statBatsman" class="text-2xl font-black text-blue-400">0</div></div>
+        <div class="bg-royal-cardDark p-3 rounded-2xl border border-emerald-500/30 text-center"><div class="text-[10px] text-emerald-300 uppercase font-bold">गेंदबाज़</div><div id="statBowler" class="text-2xl font-black text-emerald-400">0</div></div>
+        <div class="bg-royal-cardDark p-3 rounded-2xl border border-purple-500/30 text-center"><div class="text-[10px] text-purple-300 uppercase font-bold">ऑल-राउंडर</div><div id="statAllRounder" class="text-2xl font-black text-purple-400">0</div></div>
+        <div class="bg-royal-cardDark p-3 rounded-2xl border border-pink-500/30 text-center col-span-2 sm:col-span-1"><div class="text-[10px] text-pink-300 uppercase font-bold">कीपर</div><div id="statKeeper" class="text-2xl font-black text-pink-400">0</div></div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+        <div onclick="switchTab('tabSquad')" class="bg-royal-cardDark hover:bg-royal-surfaceDark p-3.5 rounded-2xl border border-gray-800 cursor-pointer transition"><div class="text-2xl mb-1">📋</div><h4 class="text-xs font-bold text-white">स्क्वाड</h4><p class="text-[10px] text-gray-400">देखें और पास लें</p></div>
+        <div onclick="switchTab('tabTeams')" class="bg-royal-cardDark hover:bg-royal-surfaceDark p-3.5 rounded-2xl border border-gray-800 cursor-pointer transition"><div class="text-2xl mb-1">⚖️</div><h4 class="text-xs font-bold text-white">टीमें बनाएं</h4><p class="text-[10px] text-gray-400">संतुलित रोस्टर</p></div>
+        <div onclick="switchTab('tabTools')" class="bg-royal-cardDark hover:bg-royal-surfaceDark p-3.5 rounded-2xl border border-gray-800 cursor-pointer transition col-span-2 sm:col-span-1"><div class="text-2xl mb-1">💾</div><h4 class="text-xs font-bold text-white">बैकअप व सेटिंग</h4><p class="text-[10px] text-gray-400">Excel / JSON</p></div>
+      </div>
+
+      <!-- Recent Mini Feed -->
+      <div class="bg-royal-cardDark rounded-2xl p-4 border border-gray-800">
+        <div class="flex items-center justify-between pb-2 mb-2 border-b border-gray-800 text-xs">
+          <span class="font-bold text-gray-200">हाल ही में पंजीकृत खिलाड़ी</span>
+          <button onclick="switchTab('tabSquad')" class="text-amber-400 font-semibold text-[11px] hover:underline">सभी देखें →</button>
+        </div>
+        <div id="recentPlayersContainer" class="space-y-2"></div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: REGISTER -->
+    <section id="viewRegister" class="space-y-4 tab-view hidden">
+      <div class="bg-royal-cardDark rounded-3xl p-4 sm:p-6 gold-border-glow shadow-xl">
+        <div class="flex items-center justify-between pb-3.5 mb-3.5 border-b border-gray-800">
+          <div>
+            <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Cloud Sync</span>
+            <h2 id="formHeaderTitle" class="text-base sm:text-lg font-bold text-white">👑 खिलाड़ी पंजीकरण फॉर्म</h2>
+          </div>
+        </div>
+
+        <form id="playerRegForm" class="space-y-4" onsubmit="handlePlayerSubmit(event)">
+          <input type="hidden" id="editingPlayerId" value="">
+          <div class="flex items-center gap-3.5 bg-royal-surfaceDark/60 p-3 rounded-2xl border border-gray-700/60">
+            <div class="relative flex-shrink-0">
+              <div class="w-16 h-16 rounded-2xl bg-royal-cardDark border-2 border-amber-400 flex items-center justify-center overflow-hidden text-2xl">
+                <span id="defaultAvatarIcon">👤</span>
+                <img id="avatarImgPreview" src="" class="w-full h-full object-cover hidden">
+              </div>
+              <button type="button" onclick="document.getElementById('playerPhotoInput').click()" class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-500 text-black flex items-center justify-center text-xs font-black shadow-lg">📷</button>
+            </div>
+            <div class="flex-1">
+              <span class="block text-xs font-bold text-white">खिलाड़ी का फोटो / सेल्फी</span>
+              <input type="file" id="playerPhotoInput" accept="image/*" capture="user" class="hidden" onchange="handlePhotoCompression(event)">
+              <button type="button" onclick="document.getElementById('playerPhotoInput').click()" class="text-[11px] font-semibold text-amber-300 underline mt-1 block">तस्वीर अपलोड करें</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-200 mb-1">खिलाड़ी का पूरा नाम <span class="text-amber-400">*</span></label>
+            <input type="text" id="playerName" required placeholder="उदा. विराट शर्मा" class="w-full px-3.5 py-3 rounded-xl bg-royal-bgDark border border-gray-700 text-white text-sm outline-none focus:border-amber-400">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-200 mb-1">खेलने की श्रेणी / रोल <span class="text-amber-400">*</span></label>
+            <select id="playerRole" required class="w-full px-3.5 py-3 rounded-xl bg-royal-bgDark border border-gray-700 text-white text-sm outline-none focus:border-amber-400">
+              <option value="" disabled selected>रोल चुनें</option>
+              <option value="बल्लेबाज़ (Batsman)">🏏 बल्लेबाज़ (Batsman)</option>
+              <option value="तेज़ गेंदबाज़ (Fast Bowler)">🎯 तेज़ गेंदबाज़ (Fast Bowler)</option>
+              <option value="स्पिनर (Spinner)">🌀 स्पिनर (Spinner)</option>
+              <option value="ऑल-राउंडर (All-Rounder)">⚡ ऑल-राउंडर (All-Rounder)</option>
+              <option value="विकेटकीपर (Wicket-Keeper)">🧤 विकेटकीपर (Wicket-Keeper)</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <span class="block text-[11px] uppercase tracking-wider text-gray-400 font-bold mb-1">बल्लेबाजी शैली:</span>
+              <div class="grid grid-cols-2 gap-1.5">
+                <label class="cursor-pointer"><input type="radio" name="battingHand" value="Right Hand (दायां)" checked class="peer sr-only"><div class="p-2 rounded-xl border border-gray-700 bg-royal-surfaceDark/60 text-xs text-center text-gray-300 peer-checked:bg-amber-500 peer-checked:text-black peer-checked:font-bold">👉 दायां हाथ</div></label>
+                <label class="cursor-pointer"><input type="radio" name="battingHand" value="Left Hand (बायां)" class="peer sr-only"><div class="p-2 rounded-xl border border-gray-700 bg-royal-surfaceDark/60 text-xs text-center text-gray-300 peer-checked:bg-amber-500 peer-checked:text-black peer-checked:font-bold">👈 बायां हाथ</div></label>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[11px] uppercase tracking-wider text-gray-400 font-bold mb-1">गेंदबाजी प्रकार:</label>
+              <select id="bowlingStyle" class="w-full px-3 py-2 rounded-xl bg-royal-bgDark border border-gray-700 text-white text-xs outline-none">
+                <option value="Right-arm Fast">Right-arm Fast</option>
+                <option value="Right-arm Medium">Right-arm Medium</option>
+                <option value="Right-arm Spin">Right-arm Spin</option>
+                <option value="Left-arm Fast">Left-arm Fast</option>
+                <option value="Left-arm Spin">Left-arm Spin</option>
+                <option value="None (केवल बल्लेबाजी)">None</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><label class="block text-xs font-bold text-gray-200 mb-1">टीम / गाँव</label><input type="text" id="playerTeam" placeholder="रॉयल स्ट्राइकर्स" class="w-full px-3.5 py-2.5 rounded-xl bg-royal-bgDark border border-gray-700 text-white text-sm outline-none"></div>
+            <div><label class="block text-xs font-bold text-gray-200 mb-1">उम्र</label><input type="number" id="playerAge" placeholder="22" class="w-full px-3.5 py-2.5 rounded-xl bg-royal-bgDark border border-gray-700 text-white text-sm outline-none"></div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2.5">
+            <div><label class="block text-[11px] font-bold text-gray-200 mb-1">जर्सी #</label><input type="number" id="playerJersey" placeholder="7" class="w-full px-3 py-2.5 rounded-xl bg-royal-bgDark border border-gray-700 text-white text-sm outline-none"></div>
+            <div><label class="block text-[11px] font-bold text-gray-200 mb-1">साइज</label><select id="playerTshirt" class="w-full px-2 py-2.5 rounded-xl bg-royal-bgDark border border-gray-700 text-white text-xs outline-none"><option value="M">M</option><option value="L" selected>L</option><option value="XL">XL</option></select></div>
+            <div><label class="block text-[11px] font-bold text-gray-200 mb-1">मोबाइल</label><input type="tel" id="playerMobile" maxlength="10" placeholder="WhatsApp" class="w-full px-3 py-2.5 rounded-xl bg-royal-bgDark border border-gray-700 text-white text-sm outline-none"></div>
+          </div>
+
+          <div class="pt-2 flex items-center gap-2">
+            <button type="submit" id="btnSubmitText" class="flex-1 gold-btn py-3.5 rounded-xl font-black text-gray-950 text-sm uppercase tracking-wider"><span>👑 खिलाड़ी जोड़ें और पास बनाएं</span></button>
+            <button type="button" id="btnCancelEdit" onclick="resetRegistrationForm()" class="hidden px-4 py-3.5 rounded-xl bg-gray-800 text-gray-300 text-xs font-bold">रद्द करें</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- VIEW 3: SQUAD DIRECTORY -->
+    <section id="viewSquad" class="space-y-3.5 tab-view hidden">
+      <div class="bg-royal-cardDark p-3.5 rounded-2xl border border-gray-800 flex flex-col gap-2.5">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold text-white flex items-center gap-1.5"><span>📋 पंजीकृत स्क्वाड</span><span id="squadCountBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">0</span></h2>
+          <div class="flex items-center gap-1.5">
+            <button onclick="toggleSquadViewMode('cards')" id="btnViewCards" class="p-1.5 rounded-lg bg-amber-500 text-black text-xs font-bold">🗂️</button>
+            <button onclick="toggleSquadViewMode('table')" id="btnViewTable" class="p-1.5 rounded-lg bg-royal-surfaceDark text-gray-300 border border-gray-700 text-xs">📊</button>
+            <button onclick="shareSquadWhatsApp()" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-bold">📲 शेयर</button>
+          </div>
+        </div>
+        <div class="relative">
+          <input type="text" id="searchSquadInput" placeholder="नाम, गाँव या जर्सी से खोजें..." class="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-royal-bgDark border border-gray-700 text-xs text-white placeholder-gray-500 outline-none" oninput="renderSquad()">
+          <svg class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+      </div>
+      <div id="squadCardsContainer" class="space-y-2.5"></div>
+      <div id="squadTableContainer" class="hidden bg-royal-cardDark rounded-2xl border border-gray-800 overflow-x-auto shadow-md">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead><tr class="bg-royal-surfaceDark text-amber-300 border-b border-gray-800 text-[10px] uppercase font-bold"><th class="py-2.5 px-3">टोकन</th><th class="py-2.5 px-3">खिलाड़ी</th><th class="py-2.5 px-3">रोल</th><th class="py-2.5 px-3">टीम</th><th class="py-2.5 px-3 text-center">एक्शन</th></tr></thead>
+          <tbody id="squadTableBody" class="divide-y divide-gray-800/80"></tbody>
+        </table>
+      </div>
+      <div id="squadEmptyBox" class="hidden bg-royal-cardDark rounded-2xl p-8 text-center border border-gray-800"><div class="text-3xl mb-2">🏏</div><h4 class="text-sm font-bold text-gray-300">कोई खिलाड़ी नहीं मिला</h4></div>
+    </section>
+
+    <!-- VIEW 4: TEAM BALANCER -->
+    <section id="viewTeams" class="space-y-4 tab-view hidden">
+      <div class="bg-royal-cardDark rounded-3xl p-4 sm:p-5 border border-amber-500/30 shadow-xl space-y-3">
+        <div class="flex items-center justify-between">
+          <div><span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Balancer</span><h3 class="text-base font-bold text-white">⚖️ ऑटोमैटिक टीम डिवाइडर</h3></div>
+          <span class="text-2xl">⚡</span>
+        </div>
+        <div class="bg-royal-surfaceDark/70 p-3 rounded-2xl border border-gray-800 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <label class="text-xs font-bold text-gray-200">कुल टीमें:</label>
+            <select id="selectTeamCount" class="px-3 py-1.5 rounded-xl bg-royal-bgDark border border-gray-700 text-amber-300 text-xs font-bold outline-none">
+              <option value="2">2 टीमें</option><option value="4" selected>4 टीमें</option><option value="6">6 टीमें</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="generateBalancedTeams()" class="gold-btn px-4 py-2 rounded-xl text-black font-extrabold text-xs">🎲 टीमें बनाएं</button>
+            <button onclick="shareGeneratedTeamsWhatsApp()" id="btnShareTeamsWA" class="hidden px-3 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs">💬 शेयर</button>
+          </div>
+        </div>
+        <div id="generatedTeamsContainer" class="space-y-3 pt-1">
+          <div class="p-6 text-center text-xs text-gray-500 border border-dashed border-gray-800 rounded-2xl">"टीमें बनाएं" बटन दबाएं।</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 5: TOOLS -->
+    <section id="viewTools" class="space-y-4 tab-view hidden">
+      <div class="bg-gradient-to-r from-blue-500/10 via-royal-cardDark to-royal-cardDark p-4 rounded-2xl border border-blue-500/30 space-y-2">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-xl font-bold flex-shrink-0">☁️</div>
+          <div><h4 class="text-sm font-bold text-white">रियल-टाइम क्लाउड स्टोरेज (Firebase)</h4><p class="text-[11px] text-gray-300">डेटा क्लाउड पर सिंक हो रहा है।</p></div>
+        </div>
+      </div>
+      <div class="bg-royal-cardDark rounded-2xl p-4 border border-gray-800 space-y-3">
+        <h3 class="text-sm font-bold text-white">🛡️ बैकअप व रिस्टोर</h3>
+        <div class="grid grid-cols-2 gap-2.5">
+          <button onclick="exportBackupJSON()" class="p-3 rounded-xl bg-royal-surfaceDark hover:bg-slate-700 text-left border border-gray-700"><div class="text-lg">📥</div><div class="text-xs font-bold text-amber-300 mt-1">बैकअप डाउनलोड</div></button>
+          <label class="p-3 rounded-xl bg-royal-surfaceDark hover:bg-slate-700 text-left border border-gray-700 cursor-pointer"><input type="file" id="jsonFileInput" accept=".json" class="hidden" onchange="importBackupJSON(event)"><div class="text-lg">📤</div><div class="text-xs font-bold text-emerald-400 mt-1">बैकअप रिस्टोर</div></label>
+        </div>
+        <button onclick="exportSquadToCSV()" class="w-full py-2.5 rounded-xl bg-royal-surfaceDark border border-amber-500/30 text-amber-300 font-bold text-xs">Excel / CSV डाउनलोड करें</button>
+      </div>
+      <div class="bg-royal-cardDark rounded-2xl p-4 border border-red-900/30 flex items-center justify-between">
+        <div><h4 class="text-xs font-bold text-red-300">डेटा रीसेट (एडमिन पासवर्ड आवश्यक)</h4></div>
+        <button onclick="promptClearAllData()" class="px-3 py-1.5 rounded-xl bg-red-950/60 text-red-400 border border-red-800/60 font-bold text-xs">साफ करें</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- NAVIGATION DOCK -->
+  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-[#050811]/95 backdrop-blur-md border-t border-amber-500/20 px-2 py-1.5" style="padding-bottom: max(0.5rem, env(safe-area-inset-bottom));">
+    <div class="max-w-md mx-auto grid grid-cols-5 gap-1 text-center">
+      <button id="navBtn-dashboard" onclick="switchTab('tabDashboard')" class="nav-tab-btn py-1.5 rounded-xl flex flex-col items-center justify-center text-amber-400 font-bold"><span class="text-lg">📊</span><span class="text-[10px]">डैशबोर्ड</span></button>
+      <button id="navBtn-register" onclick="switchTab('tabRegister')" class="nav-tab-btn py-1.5 rounded-xl flex flex-col items-center justify-center text-gray-400"><span class="text-lg">➕</span><span class="text-[10px]">पंजीकरण</span></button>
+      <button id="navBtn-squad" onclick="switchTab('tabSquad')" class="nav-tab-btn py-1.5 rounded-xl flex flex-col items-center justify-center text-gray-400 relative"><span class="text-lg">📋</span><span class="text-[10px]">स्क्वाड</span><span id="navSquadBadge" class="absolute top-1 right-2 text-[9px] font-black bg-amber-500 text-black rounded-full px-1">0</span></button>
+      <button id="navBtn-teams" onclick="switchTab('tabTeams')" class="nav-tab-btn py-1.5 rounded-xl flex flex-col items-center justify-center text-gray-400"><span class="text-lg">⚖️</span><span class="text-[10px]">टीमें</span></button>
+      <button id="navBtn-tools" onclick="switchTab('tabTools')" class="nav-tab-btn py-1.5 rounded-xl flex flex-col items-center justify-center text-gray-400"><span class="text-lg">⚙️</span><span class="text-[10px]">टूल्स</span></button>
+    </div>
+  </nav>
+
+  <!-- PASS MODAL -->
+  <div id="passModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-3 overflow-y-auto">
+    <div class="w-full max-w-sm my-auto relative">
+      <button onclick="closePassModal()" class="absolute -top-3 -right-2 z-20 w-8 h-8 rounded-full bg-gray-800 text-gray-300 border border-gray-600 flex items-center justify-center font-bold">✕</button>
+      <div id="printPassArea" class="bg-gradient-to-b from-[#131e38] via-[#0c1426] to-[#070b14] rounded-3xl border-2 border-amber-400 p-5 shadow-2xl text-center text-white">
+        <div class="border-b border-amber-500/30 pb-3">
+          <div class="inline-block px-2.5 py-0.5 rounded-full bg-amber-500/20 text-[9px] font-bold text-amber-300 uppercase">OFFICIAL PASS</div>
+          <h3 class="font-cinzel text-lg font-black gold-gradient-text uppercase">The Royal Arena</h3>
+        </div>
+        <div class="py-4 space-y-3">
+          <div class="flex items-center justify-between text-xs px-1"><span class="text-gray-400">टोकन ID:</span><span id="passCardToken" class="font-mono text-sm font-black px-2 py-0.5 rounded bg-amber-500 text-black">TRA-101</span></div>
+          <div class="flex flex-col items-center">
+            <div class="w-20 h-20 rounded-2xl border-2 border-amber-400 p-0.5 bg-royal-bgDark overflow-hidden flex items-center justify-center">
+              <img id="passCardAvatarImg" class="w-full h-full object-cover rounded-xl hidden">
+              <span id="passCardAvatarFallback" class="text-3xl">👤</span>
+            </div>
+            <h4 id="passCardPlayerName" class="text-xl font-black text-white mt-2">विराट शर्मा</h4>
+            <span id="passCardRoleBadge" class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-xs mt-1">🏏 बल्लेबाज़</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-left text-xs bg-royal-cardDark p-3 rounded-2xl border border-gray-800">
+            <div><span class="text-gray-400 text-[10px] block">टीम:</span><span id="passCardTeam" class="font-bold text-gray-200">रॉयल स्ट्राइकर्स</span></div>
+            <div><span class="text-gray-400 text-[10px] block">हाथ शैली:</span><span id="passCardStyle" class="font-bold text-gray-200">दायां हाथ</span></div>
+          </div>
+        </div>
+        <div class="pt-2 border-t border-gray-800 space-y-2 no-print">
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="window.print()" class="py-2.5 rounded-xl bg-amber-500 text-black font-extrabold text-xs">🖨️ प्रिंट</button>
+            <button onclick="shareSinglePassWhatsApp()" class="py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs">💬 व्हाट्सएप</button>
+          </div>
+          <button onclick="closePassModal()" class="w-full py-2 rounded-xl bg-gray-800 text-gray-300 text-xs">बंद करें</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN PASSWORD MODAL FOR DELETION -->
+  <div id="adminPasswordModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-royal-cardDark border border-amber-500/40 max-w-sm w-full rounded-2xl p-5 text-center shadow-2xl space-y-3">
+      <div class="text-3xl mx-auto">🔒</div>
+      <div>
+        <h4 class="text-base font-bold text-white">एडमिन पासवर्ड आवश्यक है</h4>
+        <p class="text-xs text-gray-400 mt-1">खिलाड़ी को हटाने के लिए 4 अंकों का एडमिन पिन दर्ज करें।</p>
+      </div>
+      <div>
+        <input type="password" id="adminPinInput" maxlength="4" placeholder="••••" class="w-36 text-center tracking-widest text-lg py-2.5 rounded-xl bg-royal-bgDark border border-gray-700 text-amber-400 outline-none focus:border-amber-400">
+      </div>
+      <div class="flex items-center gap-2 pt-2">
+        <button onclick="closeAdminPasswordModal()" class="flex-1 py-2.5 rounded-xl bg-gray-800 text-gray-300 text-xs font-semibold">रद्द करें</button>
+        <button onclick="verifyAdminPassword()" class="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-xs font-bold">पुष्टि करें</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toastBox" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 transform -translate-y-20 opacity-0 transition-all duration-300 pointer-events-none w-11/12 max-w-sm">
+    <div class="bg-royal-cardDark/95 border-2 border-amber-400 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 backdrop-blur-md">
+      <span id="toastIcon" class="text-2xl flex-shrink-0">👑</span>
+      <div class="flex-1">
+        <p id="toastTitle" class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">सूचना</p>
+        <p id="toastMessage" class="text-xs text-gray-200 mt-0.5"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT & FIREBASE LOGIC ================= -->
+  <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPoYxGcOm65GVDU-nAv4_DsjRjIaRzYUw",
+      authDomain: "royal-arena-e8df5.firebaseapp.com",
+      databaseURL: "https://royal-arena-e8df5-default-rtdb.firebaseio.com",
+      projectId: "royal-arena-e8df5",
+      storageBucket: "royal-arena-e8df5.firebasestorage.app",
+      messagingSenderId: "777894156302",
+      appId: "1:777894156302:web:7dcc9e7c3da74e9271445f"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const storage = firebase.storage();
+
+    // Admin Password Config (आप यहाँ अपना पासवर्ड बदल सकते हैं, डिफ़ॉल्ट 1234 है)
+    const ADMIN_PIN = "1234";
+    let pendingDeleteAction = null;
+
+    let players = [];
+    let currentSquadFilter = 'ALL';
+    let currentViewMode = 'cards';
+    let currentViewingPlayer = null;
+    let tempAvatarPhoto = '';
+    let lastGeneratedTeams = [];
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setupFirebaseListener();
+    });
+
+    function setupFirebaseListener() {
+      database.ref('players').on('value', (snapshot) => {
+        const data = snapshot.val();
+        players = [];
+        if (data) {
+          Object.keys(data).forEach(key => { players.push(data[key]); });
+          players.sort((a, b) => parseInt(b.id.split('-')[1]) - parseInt(a.id.split('-')[1]));
+        }
+        renderAllViews();
+      });
+    }
+
+    // Photo Compression
+    function handlePhotoCompression(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 300;
+          let width = img.width, height = img.height;
+          if (width > height) { if (width > maxDim) { height *= maxDim / width; width = maxDim; } }
+          else { if (height > maxDim) { width *= maxDim / height; height = maxDim; } }
+          canvas.width = width; canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          tempAvatarPhoto = canvas.toDataURL('image/jpeg', 0.8);
+          document.getElementById('avatarImgPreview').src = tempAvatarPhoto;
+          document.getElementById('avatarImgPreview').classList.remove('hidden');
+          document.getElementById('defaultAvatarIcon').classList.add('hidden');
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearAvatarPhoto() {
+      tempAvatarPhoto = '';
+      document.getElementById('playerPhotoInput').value = '';
+      document.getElementById('avatarImgPreview').classList.add('hidden');
+      document.getElementById('defaultAvatarIcon').classList.remove('hidden');
+    }
+
+    async function uploadImageToStorage(base64Str, playerId) {
+      if (!base64Str || !base64Str.startsWith('data:image')) return base64Str;
+      try {
+        const storageRef = storage.ref().child(`player_photos/${playerId}.jpg`);
+        await storageRef.putString(base64Str, 'data_url');
+        return await storageRef.getDownloadURL();
+      } catch (e) { return ""; }
+    }
+
+    async function handlePlayerSubmit(e) {
+      e.preventDefault();
+      const btnSubmit = document.getElementById('btnSubmitText');
+      btnSubmit.innerHTML = `<span>⏳ अपलोड हो रहा है...</span>`;
+      btnSubmit.disabled = true;
+
+      const editId = document.getElementById('editingPlayerId').value;
+      const name = document.getElementById('playerName').value.trim();
+      const role = document.getElementById('playerRole').value;
+      const battingHand = document.querySelector('input[name="battingHand"]:checked')?.value || 'Right Hand (दायां)';
+      const bowlingStyle = document.getElementById('bowlingStyle').value;
+      const team = document.getElementById('playerTeam').value.trim() || 'व्यक्तिगत';
+      const age = document.getElementById('playerAge').value.trim() || '-';
+      const jersey = document.getElementById('playerJersey').value.trim();
+      const tshirt = document.getElementById('playerTshirt').value;
+      const mobile = document.getElementById('playerMobile').value.trim() || '-';
+
+      let playerId = editId || `TRA-${100 + players.length + 1}`;
+      let photoUrl = tempAvatarPhoto;
+      if (tempAvatarPhoto.startsWith('data:image')) {
+        photoUrl = await uploadImageToStorage(tempAvatarPhoto, playerId);
+      }
+
+      const playerData = { id: playerId, name, role, battingHand, bowlingStyle, team, age, jersey, tshirt, mobile, photo: photoUrl, date: editId ? players.find(p=>p.id===editId).date : new Date().toLocaleDateString('en-GB') };
+      await database.ref('players/' + playerId).set(playerData);
+
+      resetRegistrationForm();
+      btnSubmit.innerHTML = `<span>👑 खिलाड़ी जोड़ें और पास बनाएं</span>`;
+      btnSubmit.disabled = false;
+      showToast(editId ? `खिलाड़ी अपडेट हो गया!` : `👑 ${name} का रजिस्ट्रेशन सुरक्षित हो गया!`, '🎉');
+      openPassModal(playerData);
+    }
+
+    function editPlayer(id) {
+      const p = players.find(item => item.id === id);
+      if (!p) return;
+      switchTab('tabRegister');
+      document.getElementById('editingPlayerId').value = p.id;
+      document.getElementById('playerName').value = p.name;
+      document.getElementById('playerRole').value = p.role;
+      document.getElementById('playerTeam').value = p.team;
+      document.getElementById('playerAge').value = p.age;
+      document.getElementById('playerJersey').value = p.jersey;
+      document.getElementById('playerMobile').value = p.mobile;
+      if (p.photo) {
+        tempAvatarPhoto = p.photo;
+        document.getElementById('avatarImgPreview').src = p.photo;
+        document.getElementById('avatarImgPreview').classList.remove('hidden');
+        document.getElementById('defaultAvatarIcon').classList.add('hidden');
+      }
+      document.getElementById('formHeaderTitle').innerText = '✏️ खिलाड़ी विवरण संशोधित करें';
+      document.getElementById('btnSubmitText').innerHTML = '<span>💾 अपडेट सुरक्षित करें</span>';
+      document.getElementById('btnCancelEdit').classList.remove('hidden');
+    }
+
+    function resetRegistrationForm() {
+      document.getElementById('playerRegForm').reset();
+      document.getElementById('editingPlayerId').value = '';
+      clearAvatarPhoto();
+      document.getElementById('formHeaderTitle').innerText = '👑 खिलाड़ी पंजीकरण फॉर्म';
+      document.getElementById('btnSubmitText').innerHTML = '<span>👑 खिलाड़ी जोड़ें और पास बनाएं</span>';
+      document.getElementById('btnCancelEdit').classList.add('hidden');
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-view').forEach(view => view.classList.add('hidden'));
+      const navBtns = { 'tabDashboard': 'navBtn-dashboard', 'tabRegister': 'navBtn-register', 'tabSquad': 'navBtn-squad', 'tabTeams': 'navBtn-teams', 'tabTools': 'navBtn-tools' };
+      Object.values(navBtns).forEach(btnId => {
+        const b = document.getElementById(btnId);
+        if (b) { b.classList.remove('text-amber-400', 'font-bold'); b.classList.add('text-gray-400'); }
+      });
+      const viewMap = { 'tabDashboard': 'viewDashboard', 'tabRegister': 'viewRegister', 'tabSquad': 'viewSquad', 'tabTeams': 'viewTeams', 'tabTools': 'viewTools' };
+      document.getElementById(viewMap[tabId]).classList.remove('hidden');
+      const activeBtn = document.getElementById(navBtns[tabId]);
+      if (activeBtn) { activeBtn.classList.add('text-amber-400', 'font-bold'); activeBtn.classList.remove('text-gray-400'); }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderAllViews() {
+      renderStats();
+      renderRecentWidget();
+      renderSquad();
+    }
+
+    function renderStats() {
+      const total = players.length;
+      let batsmen = 0, bowlers = 0, allRounders = 0, keepers = 0;
+      players.forEach(p => {
+        if (p.role.includes('बल्लेबाज़')) batsmen++;
+        else if (p.role.includes('गेंदबाज़') || p.role.includes('स्पिनर')) bowlers++;
+        else if (p.role.includes('ऑल-राउंडर')) allRounders++;
+        else if (p.role.includes('विकेटकीपर')) keepers++;
+      });
+      document.getElementById('statTotal').innerText = total;
+      document.getElementById('statBatsman').innerText = batsmen;
+      document.getElementById('statBowler').innerText = bowlers;
+      document.getElementById('statAllRounder').innerText = allRounders;
+      document.getElementById('statKeeper').innerText = keepers;
+      document.getElementById('squadCountBadge').innerText = total;
+      document.getElementById('navSquadBadge').innerText = total;
+    }
+
+    function renderRecentWidget() {
+      const container = document.getElementById('recentPlayersContainer');
+      const recent = players.slice(0, 3);
+      if (recent.length === 0) {
+        container.innerHTML = `<div class="py-3 text-center"><p class="text-xs text-gray-400">अभी कोई खिलाड़ी पंजीकृत नहीं है।</p></div>`; return;
+      }
+      let html = '';
+      recent.forEach(p => {
+        html += `<div class="flex items-center justify-between p-2.5 rounded-xl bg-royal-surfaceDark/50 border border-gray-800">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-full bg-royal-cardDark border border-amber-500/40 flex items-center justify-center overflow-hidden text-xs">
+              ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `👤`}
+            </div>
+            <div><h5 class="text-xs font-bold text-white">${p.name}</h5><span class="text-[10px] text-amber-300">${p.role}</span></div>
+          </div>
+          <button onclick="openPassById('${p.id}')" class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30">पास</button>
+        </div>`;
+      });
+      container.innerHTML = html;
+    }
+
+    function toggleSquadViewMode(mode) {
+      currentViewMode = mode;
+      document.getElementById('btnViewCards').className = mode==='cards' ? 'p-1.5 rounded-lg bg-amber-500 text-black text-xs font-bold' : 'p-1.5 rounded-lg bg-royal-surfaceDark text-gray-300 border border-gray-700 text-xs';
+      document.getElementById('btnViewTable').className = mode==='table' ? 'p-1.5 rounded-lg bg-amber-500 text-black text-xs font-bold' : 'p-1.5 rounded-lg bg-royal-surfaceDark text-gray-300 border border-gray-700 text-xs';
+      document.getElementById('squadCardsContainer').classList.toggle('hidden', mode==='table');
+      document.getElementById('squadTableContainer').classList.toggle('hidden', mode==='cards');
+      renderSquad();
+    }
+
+    function renderSquad() {
+      const searchVal = (document.getElementById('searchSquadInput').value || '').toLowerCase().trim();
+      const filtered = players.filter(p => p.name.toLowerCase().includes(searchVal) || p.team.toLowerCase().includes(searchVal) || p.id.toLowerCase().includes(searchVal));
+
+      if (filtered.length === 0) {
+        document.getElementById('squadCardsContainer').innerHTML = ''; document.getElementById('squadTableBody').innerHTML = '';
+        document.getElementById('squadEmptyBox').classList.remove('hidden'); return;
+      }
+      document.getElementById('squadEmptyBox').classList.add('hidden');
+
+      let cardsHtml = '', tableHtml = '';
+      filtered.forEach(p => {
+        cardsHtml += `<div class="bg-royal-cardDark rounded-2xl p-3.5 border border-gray-800 shadow-md">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-royal-surfaceDark border border-amber-500/30 flex items-center justify-center overflow-hidden text-xl flex-shrink-0">
+              ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `👤`}
+            </div>
+            <div class="flex-1">
+              <h4 class="text-sm font-bold text-white">${p.name}</h4>
+              <span class="text-[10px] text-amber-300">${p.role} (${p.id})</span>
+            </div>
+          </div>
+          <div class="mt-2.5 pt-2 border-t border-gray-800 flex items-center justify-between gap-1.5">
+            <button onclick="openPassById('${p.id}')" class="flex-1 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 font-bold text-xs border border-amber-500/30">🎟️ पास</button>
+            <button onclick="editPlayer('${p.id}')" class="p-1.5 rounded-lg bg-royal-surfaceDark text-gray-300 text-xs">✏️</button>
+            <button onclick="promptDeletePlayer('${p.id}')" class="p-1.5 rounded-lg bg-red-950/40 text-red-400 text-xs">🗑️</button>
+          </div>
+        </div>`;
+
+        tableHtml += `<tr class="hover:bg-royal-surfaceDark/40">
+          <td class="py-2.5 px-3 font-mono font-bold text-amber-400">${p.id}</td>
+          <td class="py-2.5 px-3 font-semibold text-white">${p.name}</td>
+          <td class="py-2.5 px-3 text-gray-300">${p.role}</td>
+          <td class="py-2.5 px-3 text-gray-400">${p.team}</td>
+          <td class="py-2.5 px-3 text-center">
+            <button onclick="openPassById('${p.id}')" class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-xs">पास</button>
+            <button onclick="promptDeletePlayer('${p.id}')" class="p-1 text-red-400">🗑️</button>
+          </td>
+        </tr>`;
+      });
+      document.getElementById('squadCardsContainer').innerHTML = cardsHtml;
+      document.getElementById('squadTableBody').innerHTML = tableHtml;
+    }
+
+    // ================= SECURE ADMIN PASSWORD PROTECTION FOR DELETE =================
+    function promptDeletePlayer(id) {
+      pendingDeleteAction = async () => {
+        await database.ref('players/' + id).remove();
+        showToast('खिलाड़ी को सफलतापूर्वक हटा दिया गया!', '🗑️');
+      };
+      openAdminPasswordModal();
+    }
+
+    function promptClearAllData() {
+      pendingDeleteAction = async () => {
+        await database.ref('players').remove();
+        showToast('सारा डेटा साफ़ कर दिया गया!', '🧹');
+      };
+      openAdminPasswordModal();
+    }
+
+    function openAdminPasswordModal() {
+      document.getElementById('adminPinInput').value = '';
+      const modal = document.getElementById('adminPasswordModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeAdminPasswordModal() {
+      const modal = document.getElementById('adminPasswordModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      pendingDeleteAction = null;
+    }
+
+    function verifyAdminPassword() {
+      const enteredPin = document.getElementById('adminPinInput').value;
+      if (enteredPin === ADMIN_PIN) {
+        closeAdminPasswordModal();
+        if (pendingDeleteAction) pendingDeleteAction();
+      } else {
+        showToast('गलत पासवर्ड! खिलाड़ी नहीं हटाया गया।', '❌');
+      }
+    }
+
+    function generateBalancedTeams() {
+      if (players.length < 2) { showToast('टीम बनाने के लिए कम से कम 2 खिलाड़ी चाहिए!', '⚠️'); return; }
+      const teamCount = parseInt(document.getElementById('selectTeamCount').value) || 2;
+      const shuffle = arr => arr.slice().sort(() => Math.random() - 0.5);
+      const teams = Array.from({ length: teamCount }, (_, i) => ({ name: `रॉयल टीम ${String.fromCharCode(65 + i)}`, players: [] }));
+      shuffle(players).forEach((p, i) => { teams[i % teamCount].players.push(p); });
+      lastGeneratedTeams = teams;
+
+      let html = '';
+      teams.forEach((t) => {
+        html += `<div class="bg-royal-cardDark rounded-2xl p-4 border border-amber-500/30 shadow-lg">
+          <h4 class="text-sm font-black gold-gradient-text mb-2">🛡️ ${t.name} (${t.players.length})</h4>
+          <div class="space-y-1 text-xs">
+            ${t.players.map((p, idx) => `<div class="flex justify-between p-1 rounded bg-royal-surfaceDark text-gray-200"><span>${idx+1}. ${p.name}</span><span class="text-gray-400">${p.role}</span></div>`).join('')}
+          </div>
+        </div>`;
+      });
+      document.getElementById('generatedTeamsContainer').innerHTML = html;
+      document.getElementById('btnShareTeamsWA').classList.remove('hidden');
+      showToast('टीमें बन गईं!', '🎲');
+    }
+
+    function shareGeneratedTeamsWhatsApp() {
+      let msg = `🏆 *THE ROYAL ARENA* 🏆%0A⚔️ *टीमें* ⚔️%0A%0A`;
+      lastGeneratedTeams.forEach(t => { msg += `🛡️ *${t.name}*%0A`; t.players.forEach((p, idx) => { msg += `  ${idx + 1}. ${p.name}%0A`; }); msg += `%0A`; });
+      window.open(`https://wa.me/?text=${msg}`, '_blank');
+    }
+
+    function openPassById(id) {
+      const p = players.find(item => item.id === id);
+      if (p) openPassModal(p);
+    }
+
+    function openPassModal(p) {
+      currentViewingPlayer = p;
+      document.getElementById('passCardToken').innerText = p.id;
+      document.getElementById('passCardPlayerName').innerText = p.name;
+      document.getElementById('passCardRoleBadge').innerText = p.role;
+      document.getElementById('passCardTeam').innerText = p.team;
+      document.getElementById('passCardStyle').innerText = p.battingHand;
+      if (p.photo) {
+        document.getElementById('passCardAvatarImg').src = p.photo;
+        document.getElementById('passCardAvatarImg').classList.remove('hidden');
+        document.getElementById('passCardAvatarFallback').classList.add('hidden');
+      } else {
+        document.getElementById('passCardAvatarImg').classList.add('hidden');
+        document.getElementById('passCardAvatarFallback').classList.remove('hidden');
+      }
+      const modal = document.getElementById('passModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closePassModal() {
+      const modal = document.getElementById('passModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function shareSinglePassWhatsApp() {
+      const p = currentViewingPlayer;
+      let msg = `👑 *THE ROYAL ARENA* 👑%0A🎟️ *पास ID:* ${p.id}%0A• *नाम:* ${p.name}%0A• *रोल:* ${p.role}%0A✅ *सत्यापित*`;
+      window.open(`https://wa.me/?text=${msg}`, '_blank');
+    }
+
+    function shareSquadWhatsApp() {
+      let msg = `🏆 *THE ROYAL ARENA* 🏆%0A📋 *स्क्वाड (${players.length})*%0A`;
+      players.forEach((p, idx) => { msg += `${idx + 1}. *${p.name}* (${p.role})%0A`; });
+      window.open(`https://wa.me/?text=${msg}`, '_blank');
+    }
+
+    function exportBackupJSON() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(players, null, 2));
+      const a = document.createElement('a'); a.href = dataStr; a.download = `Royal_Arena_Backup.json`; document.body.appendChild(a); a.click(); a.remove();
+      showToast('बैकअप डाउनलोड हो गया!', '💾');
+    }
+
+    function importBackupJSON(event) {
+      const file = event.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            for (const p of imported) { await database.ref('players/' + p.id).set(p); }
+            showToast('बैकअप रिस्टोर हो गया!', '✅');
+          }
+        } catch (err) { showToast('त्रुटि!', '⚠️'); }
+      };
+      reader.readAsText(file);
+    }
+
+    function exportSquadToCSV() {
+      let csv = "data:text/csv;charset=utf-8,\uFEFFटोकन_ID,खिलाड़ी_का_नाम,रोल,टीम,मोबाइल\n";
+      players.forEach(p => { csv += `"${p.id}","${p.name}","${p.role}","${p.team}","${p.mobile}"\n`; });
+      const a = document.createElement("a"); a.href = encodeURI(csv); a.download = `Royal_Arena_Squad.csv`; document.body.appendChild(a); a.click(); a.remove();
+      showToast('CSV डाउनलोड हो गया!', '📊');
+    }
+
+    function showToast(message, icon) {
+      document.getElementById('toastIcon').innerText = icon;
+      document.getElementById('toastMessage').innerText = message;
+      const toast = document.getElementById('toastBox');
+      toast.style.transform = 'translate(-50%, 0)'; toast.style.opacity = '1';
+      setTimeout(() => { toast.style.transform = 'translate(-50%, -80px)'; toast.style.opacity = '0'; }, 3000);
+    }
+
+    function openInstallGuideModal() { alert("मोबाइल में सेव करने के लिए ब्राउज़र के (⋮) मेन्यू में जाकर 'Add to Home screen' चुनें।"); }
+  </script>
+</body>
+</html>
